@@ -1,5 +1,18 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpException, HttpStatus, Param, ParseUUIDPipe, Post, Put } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpException,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+} from '@nestjs/common'
 import { ApiResponse } from '@nestjs/swagger'
+import { ValidateResourcesIds } from 'src/common/decorators/validate-resources-ids.decorator'
 import { ProjectListItemDTO, ProjectsRequestDTO } from './projects.dto'
 import { ProjectsService } from './projects.service'
 
@@ -22,10 +35,11 @@ export class ProjectsController {
   @ApiResponse({
     type: ProjectListItemDTO,
   })
+  @ValidateResourcesIds()
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const project = await this.ProjectsService.findById(id)
 
-    if(!project) {
+    if (!project) {
       throw new HttpException('Project not found', HttpStatus.NOT_FOUND)
     } else {
       return project
@@ -44,13 +58,10 @@ export class ProjectsController {
   @ApiResponse({
     type: ProjectListItemDTO,
   })
-  async update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() data: ProjectsRequestDTO
-  ) {
+  async update(@Param('id', ParseUUIDPipe) id: string, @Body() data: ProjectsRequestDTO) {
     const project = await this.ProjectsService.findById(id)
 
-    if(!project) {
+    if (!project) {
       throw new HttpException('Project not found', HttpStatus.NOT_FOUND)
     }
 
@@ -62,7 +73,7 @@ export class ProjectsController {
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     const project = await this.ProjectsService.findById(id)
 
-    if(!project) {
+    if (!project) {
       throw new HttpException('Project not found', HttpStatus.NOT_FOUND)
     }
     return this.ProjectsService.remove(id)
