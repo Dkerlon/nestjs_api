@@ -11,9 +11,6 @@ export class TasksService {
       where: {
         projectId,
       },
-      include: {
-        project: true,
-      },
     })
   }
 
@@ -22,9 +19,6 @@ export class TasksService {
       where: {
         id: taskId,
         projectId,
-      },
-      include: {
-        project: true,
       },
     })
   }

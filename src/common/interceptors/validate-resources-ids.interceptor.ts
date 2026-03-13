@@ -1,10 +1,58 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+  NotFoundException,
+} from '@nestjs/common'
+import { Reflector } from '@nestjs/core'
+import { Observable } from 'rxjs'
+import { VALIDATE_RESOURCES_IDS_KEY } from 'src/consts'
+import { PrismaService } from 'src/prisma.service'
 
 @Injectable()
 export class ValidateResourcesIdsInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    return next.handle();
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly prismaService: PrismaService,
+  ) {}
+
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<Request>> {
+    // Validar se o endpoint possui o decorator ValidateResourcesIds
+    const shouldValidate = this.reflector.get<boolean>(
+      VALIDATE_RESOURCES_IDS_KEY,
+      context.getHandler(),
+    )
+
+    if (!shouldValidate) return next.handle()
+
+    //Validar o id da URL
+
+    const request = context.switchToHttp().getRequest()
+    const projectId = request.params.projectId
+    const project = await this.prismaService.project.findFirst({
+      where: {
+        id: projectId,
+      },
+    })
+
+    if(!project) throw new NotFoundException('Project not found')
+
+    //Validar o taskId, se existir
+    const taskId = request.params.taskId
+    if (taskId) {
+      const task = await this.prismaService.task.findFirst({
+        where: {
+          id: taskId,
+          projectId,
+        },
+      })
+
+      if (task) return next.handle()
+
+      throw new NotFoundException('Task not found')
+    }
+
+    return next.handle()
   }
 }
- 
