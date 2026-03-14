@@ -11,12 +11,12 @@ import {
   Put,
   UseInterceptors,
 } from '@nestjs/common'
+import { ApiResponse } from '@nestjs/swagger'
 import { ValidateResourcesIds } from 'src/common/decorators/validate-resources-ids.decorator'
 import { ValidateResourcesIdsInterceptor } from 'src/common/interceptors/validate-resources-ids.interceptor'
 import { PrismaService } from 'src/prisma.service'
 import { TaskDTO } from './tasks.dto'
 import { TasksService } from './tasks.service'
-import { ApiResponse } from '@nestjs/swagger'
 
 @Controller({
   version: '1',
@@ -84,6 +84,6 @@ export class TasksController {
         projectId,
       },
     })
-    return await this.tasksService.delete(projectId, taskId)
+    return this.tasksService.delete(projectId, taskId)
   }
 }

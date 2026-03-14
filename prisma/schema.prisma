@@ -41,7 +41,7 @@ model Project {
   collaborators ProjectColaborator[] @relation("ProjectToColaborator")
 }
 
-enum TaskStatus {
+enum TaskStatus {     
   TODO
   IN_PROGRESS
   DONE

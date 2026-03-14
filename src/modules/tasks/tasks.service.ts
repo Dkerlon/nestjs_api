@@ -6,16 +6,16 @@ import { TaskDTO } from './tasks.dto'
 export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAllByProject(projectId: string) {
-    return await this.prisma.task.findMany({
+  findAllByProject(projectId: string) {
+    return this.prisma.task.findMany({
       where: {
         projectId,
       },
     })
   }
 
-  async findById(projectId: string, taskId: string) {
-    return await this.prisma.task.findFirst({
+  findById(projectId: string, taskId: string) {
+    return this.prisma.task.findFirst({
       where: {
         id: taskId,
         projectId,
@@ -23,8 +23,8 @@ export class TasksService {
     })
   }
 
-  async create(projectId: string, data: TaskDTO) {
-    return await this.prisma.task.create({
+  create(projectId: string, data: TaskDTO) {
+    return this.prisma.task.create({
       data: {
         ...data,
         projectId,
@@ -32,8 +32,8 @@ export class TasksService {
     })
   }
 
-  async update(projectId: string, taskId: string, data: TaskDTO) {
-    return await this.prisma.task.update({
+  update(projectId: string, taskId: string, data: TaskDTO) {
+    return this.prisma.task.update({
       where: {
         id: taskId,
         projectId,
