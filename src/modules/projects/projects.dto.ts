@@ -34,7 +34,7 @@ export class ProjectTaskDTO{
   @ApiProperty({
     enum: TaskPriority,
     default: TaskPriority.MEDIUM
-  }) priority!: TaskPriority
+  }) priority: TaskPriority = TaskPriority.MEDIUM
   @ApiProperty({nullable: true, required: false, format: 'date-time'}) dueDate?: string
   @ApiProperty({format: 'date-time'}) createdAt!: string
   @ApiProperty({format: 'date-time'}) updatedAt!: string

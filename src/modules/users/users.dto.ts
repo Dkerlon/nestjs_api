@@ -64,7 +64,7 @@ export class UserListItemDTO {
   email!: string
 
   @ApiProperty({ description: 'User Role', enum: Role })
-  role!: Role
+  role: Role = Role.USER
 
   @ApiProperty({ description: 'User avatar URL', required: false })
   avatar!: string | null
