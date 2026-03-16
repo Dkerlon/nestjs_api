@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { RequestContextService } from 'src/common/services/request-context.service'
+import { RequestContextService } from 'src/common/modules/request-context-module/request-context.service'
 import { PrismaService } from 'src/prisma.service'
 import { CommentsController } from './comments.controller'
 import { CommentsService } from './comments.service'

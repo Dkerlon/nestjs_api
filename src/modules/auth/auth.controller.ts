@@ -4,7 +4,7 @@ import { ApiOkResponse } from '@nestjs/swagger'
 import { type User } from '@prisma/client'
 import { AuthenticatedUser } from 'src/common/decorators/authenticated-user.decorator'
 import { UsersService } from '../users/users.service'
-import { SignInDTO, SignUpDTO } from './auth.dto'
+import { ForgetPasswordDTO, SignInDTO, SignUpDTO } from './auth.dto'
 import { AuthService } from './auth.service'
 
 @Controller({
@@ -37,5 +37,11 @@ export class AuthController {
       message: 'Authetication successful',
       user: user,
     }
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  forgotPassword(@Body() data: ForgetPasswordDTO) {
+    return this.authService.forgotPassword(data.email)
   }
 }

@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt'
 import { PrismaService } from 'src/prisma.service'
 import { UsersService } from '../users/users.service'
 import { SignInDTO, SignUpDTO } from './auth.dto'
+import { MailService } from '../mail/mail.service'
 
 @Injectable()
 export class AuthService {
@@ -11,6 +12,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly prismaService: PrismaService,
+    private readonly mailService: MailService,
   ) {}
 
   async signUp(data: SignUpDTO) {
@@ -45,5 +47,29 @@ export class AuthService {
     }
 
     throw new UnauthorizedException("Invalid credentials")
+  }
+
+  async forgotPassword(email: string){
+    const user = await this.prismaService.user.findFirst({
+      where:{
+        email
+      }
+    })
+
+    if(!user){
+      throw new UnauthorizedException("Invalid credentials")
+    }
+
+    const token = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      purpose: 'password_reset'
+    })
+
+    await this.mailService.sendPasswordRequest(user.email, token)
+
+    return {
+      message: 'Password reset email sent'
+    }
   }
 }
