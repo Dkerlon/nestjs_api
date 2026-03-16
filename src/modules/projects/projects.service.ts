@@ -1,28 +1,39 @@
 import { Injectable } from '@nestjs/common'
+import { RequestContextService } from 'src/common/services/request-context.service'
 import { PrismaService } from 'src/prisma.service'
 import { ProjectsRequestDTO } from './projects.dto'
 
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prismaService: PrismaService) {}
-
+  private userId!: string
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly RequestContext: RequestContextService,
+  ) {
+    this.userId = this.RequestContext.getUserId()
+  }
   findAll() {
-    return this.prismaService.project.findMany()
+    return this.prismaService.project.findMany({
+      where: {
+        createdById: this.userId,
+      },
+    })
   }
 
   findById(id: string) {
     return this.prismaService.project.findFirst({
       where: {
         id,
+        createdById: this.userId,
       },
-      select:{
+      select: {
         id: true,
         name: true,
         description: true,
         createdAt: true,
         updatedAt: true,
         tasks: {
-          select:{
+          select: {
             id: true,
             title: true,
             description: true,
@@ -30,17 +41,17 @@ export class ProjectsService {
             createdAt: true,
             updatedAt: true,
             priority: true,
-          }
-        }
-      }
+          },
+        },
+      },
     })
   }
 
   create(data: ProjectsRequestDTO) {
     return this.prismaService.project.create({
-      data:{
+      data: {
         ...data,
-        createdById: 'cba5c7c3-87e6-4829-82e0-6f3cec653839' //TODO: REMOVER QUANDO TIVER AUTENTICAÇÃO
+        createdById: this.userId,
       },
     })
   }
@@ -49,6 +60,7 @@ export class ProjectsService {
     return this.prismaService.project.update({
       where: {
         id,
+        createdById: this.userId,
       },
       data,
     })
@@ -58,7 +70,8 @@ export class ProjectsService {
     return this.prismaService.project.delete({
       where: {
         id,
-      }
+        createdById: this.userId,
+      },
     })
   }
 }

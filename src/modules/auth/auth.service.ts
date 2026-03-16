@@ -25,8 +25,6 @@ export class AuthService {
     return{
       token: this.jwtService.sign({
         sub: newUser.id,
-        name: newUser.name,
-        role: newUser.role
       })
     }
   }
@@ -42,8 +40,6 @@ export class AuthService {
       return{
         token: this.jwtService.sign({
           sub: user.id,
-          name: user.name,
-          role: user.role
         })
       }
     }

@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { RequestContextService } from 'src/common/services/request-context.service'
 import { PrismaService } from 'src/prisma.service'
 import { CommentRequestDTO } from './comments.dto'
 
@@ -11,7 +12,13 @@ const authorFields = {
 }
 @Injectable()
 export class CommentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private userId: string
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly RequestContext: RequestContextService,
+  ) {
+    this.userId = RequestContext.getUserId()
+  }
 
   findAllByTask(taskId: string) {
     return this.prisma.comment.findMany({
@@ -32,31 +39,31 @@ export class CommentsService {
     return this.prisma.comment.findUnique({
       where: {
         id,
-        taskId
+        taskId,
       },
       include: {
-       author:{
-        select: {
-          ...authorFields,
+        author: {
+          select: {
+            ...authorFields,
+          },
         },
-       },
-       task:{
-        select: {
-          id: true,
-          title: true,
-          projectId: true,
+        task: {
+          select: {
+            id: true,
+            title: true,
+            projectId: true,
+          },
         },
-       }
       },
     })
   }
 
   create(taskId: string, data: CommentRequestDTO) {
     return this.prisma.comment.create({
-      data:{
+      data: {
         ...data,
         taskId,
-        authorId: 'cba5c7c3-87e6-4829-82e0-6f3cec653839' //TODO: Remover quando tiver autenticação
+        authorId: this.userId,
       },
       include: {
         author: {
@@ -69,14 +76,20 @@ export class CommentsService {
   }
 
   async update(taskId: string, id: string, data: CommentRequestDTO) {
+    const existingComment = await this.prisma.comment.findFirst({
+      where: {
+        id,
+        taskId,
+        authorId: this.userId,
+      },
+    })
 
-    const existingComment = await this.findByid(id, taskId)
-
-    if(!existingComment) throw new NotFoundException('Comment not found')
+    if (!existingComment) throw new NotFoundException('Comment not found')
 
     return this.prisma.comment.update({
       where: {
         id,
+        authorId: this.userId,
       },
       data,
       include: {
@@ -90,15 +103,20 @@ export class CommentsService {
   }
 
   async delete(taskId: string, id: string) {
+    const existingComment = await this.prisma.comment.findFirst({
+      where: {
+        id,
+        taskId,
+        authorId: this.userId,
+      },
+    })
 
-    const existingComment = await this.findByid(id, taskId)
-
-    if(!existingComment) throw new NotFoundException('Comment not found')
+    if (!existingComment) throw new NotFoundException('Comment not found')
 
     this.prisma.comment.delete({
       where: {
         id,
-        taskId
+        taskId,
       },
     })
   }

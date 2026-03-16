@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common'
 import { ApiResponse } from '@nestjs/swagger'
@@ -17,6 +18,7 @@ import { ValidateResourcesIdsInterceptor } from 'src/common/interceptors/validat
 import { PrismaService } from 'src/prisma.service'
 import { TaskDTO } from './tasks.dto'
 import { TasksService } from './tasks.service'
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 
 @Controller({
   version: '1',
@@ -34,6 +36,7 @@ export class TasksController {
   @ApiResponse({
     type: [TaskDTO],
   })
+  @UseGuards(JwtAuthGuard)
   async findAllByProject(@Param('projectId', ParseUUIDPipe) projectId: string) {
     return await this.tasksService.findAllByProject(projectId)
   }
