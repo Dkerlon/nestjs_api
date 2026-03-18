@@ -3,8 +3,7 @@ import { AuthGuard } from '@nestjs/passport'
 import { ApiOkResponse } from '@nestjs/swagger'
 import { type User } from '@prisma/client'
 import { AuthenticatedUser } from 'src/common/decorators/authenticated-user.decorator'
-import { UsersService } from '../users/users.service'
-import { ForgetPasswordDTO, SignInDTO, SignUpDTO } from './auth.dto'
+import { ForgetPasswordDTO, ResetPasswordDTO, SignInDTO, SignUpDTO } from './auth.dto'
 import { AuthService } from './auth.service'
 
 @Controller({
@@ -14,7 +13,6 @@ import { AuthService } from './auth.service'
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly usersService: UsersService,
   ) {}
 
   @Post('signin')
@@ -43,5 +41,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   forgotPassword(@Body() data: ForgetPasswordDTO) {
     return this.authService.forgotPassword(data.email)
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() data: ResetPasswordDTO) {
+    return this.authService.resetPassword(data.token, data.password)
   }
 }
