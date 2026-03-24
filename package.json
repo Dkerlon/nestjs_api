@@ -24,15 +24,20 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.2",
+    "@nestjs/microservices": "^11.1.17",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.6",
     "@prisma/client": "6.14.0",
     "@types/bcrypt": "^6.0.0",
+    "amqp-connection-manager": "^5.0.0",
+    "amqplib": "^0.10.9",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "cloudinary": "^2.9.0",
     "handlebars": "^4.7.8",
+    "multer": "^2.1.1",
     "nodemailer": "^8.0.2",
     "passport-jwt": "^4.0.1",
     "pg": "^8.20.0",
@@ -47,6 +52,7 @@
     "@nestjs/testing": "^11.0.1",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.1.0",
     "@types/node": "^22.10.7",
     "@types/passport-jwt": "^4.0.1",
     "@types/pg": "^8.18.0",
@@ -78,5 +84,14 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "pnpm": {
+    "packageExtensions": {
+      "@nestjs/platform-express": {
+        "peerDependencies": {
+          "multer": "*"
+        }
+      }
+    }
   }
 }

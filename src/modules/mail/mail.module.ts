@@ -1,33 +1,50 @@
-import { Module } from '@nestjs/common';
-import { MailService } from './mail.service';
-import { MailerModule } from '@nestjs-modules/mailer';
-import path from 'path';
+import { Module } from '@nestjs/common'
+import { ClientsModule, Transport } from '@nestjs/microservices'
+import { MailerModule } from '@nestjs-modules/mailer'
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter'
+import path from 'path'
+import { EMAIL_SERVICE } from 'src/consts'
+import { MailConsumer } from './mail.consumer'
+import { MailService } from './mail.service'
 @Module({
-  imports:[
+  imports: [
     MailerModule.forRoot({
-      transport:{
+      transport: {
         host: process.env.SMTP_HOST,
         port: Number(process.env.SMTP_PORT),
         secure: false,
-        auth:{
+        auth: {
           user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS
-        }
+          pass: process.env.SMTP_PASS,
+        },
       },
-      defaults:{
+      defaults: {
         from: '"Curso NestJS" <no-reply@kerlon.dev>',
       },
-      template:{
+      template: {
         dir: path.join(__dirname, 'templates'),
         adapter: new HandlebarsAdapter(),
-        options:{
-          strict: true
-        }
+        options: {
+          strict: true,
+        },
       },
-    })
+    }),
+    ClientsModule.register([
+      {
+        name: EMAIL_SERVICE,
+        transport: Transport.RMQ,
+        options: {
+          urls: [process.env.RABBITMQ_URL!],
+          queue: 'email_queue',
+          queueOptions: {
+            durable: true,
+          },
+        },
+      },
+    ]),
   ],
   providers: [MailService],
-  exports: [MailService]
+  exports: [MailService, ClientsModule],
+  controllers: [MailConsumer],
 })
 export class MailModule {}
