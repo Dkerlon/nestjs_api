@@ -1,30 +1,49 @@
 import { Injectable } from '@nestjs/common'
+import { Project } from '@prisma/client'
+import { queryPaginationDTO } from 'src/common/dtos/query-pagination.dto'
 import { RequestContextService } from 'src/common/modules/RequestContext/request-context.service'
 import { PrismaService } from 'src/prisma.service'
+import { paginate, paginateOutput } from 'src/utils/pagination.utils'
 import { ProjectsRequestDTO } from './projects.dto'
 
 @Injectable()
 export class ProjectsService {
-  private userId!: string
   constructor(
     private readonly prismaService: PrismaService,
     private readonly RequestContext: RequestContextService,
   ) {
-    this.userId = this.RequestContext.getUserId()
   }
-  findAll() {
-    return this.prismaService.project.findMany({
+  async findAll(query?: queryPaginationDTO) {
+    const userId = this.RequestContext.getUserId();
+    const projects = await this.prismaService.project.findMany({
+      ...paginate(query),
       where: {
-        createdById: this.userId,
+        createdById: userId,
       },
     })
+
+    const total = await this.prismaService.project.count({
+      where: {
+        OR: [
+          { createdById: userId },
+          {
+            collaborators: {
+              some: { userId: userId },
+            },
+          },
+        ],
+      },
+    })
+
+    return paginateOutput<Project>(projects, query, total)
   }
 
   findById(id: string) {
+    const userId = this.RequestContext.getUserId();
     return this.prismaService.project.findFirst({
       where: {
         id,
-        createdById: this.userId,
+        createdById: userId,
       },
       select: {
         id: true,
@@ -48,29 +67,32 @@ export class ProjectsService {
   }
 
   create(data: ProjectsRequestDTO) {
+    const userId = this.RequestContext.getUserId();
     return this.prismaService.project.create({
       data: {
         ...data,
-        createdById: this.userId,
+        createdById: userId,
       },
     })
   }
 
   update(id: string, data: ProjectsRequestDTO) {
+    const userId = this.RequestContext.getUserId();
     return this.prismaService.project.update({
       where: {
         id,
-        createdById: this.userId,
+        createdById: userId,
       },
       data,
     })
   }
 
   remove(id: string) {
+    const userId = this.RequestContext.getUserId();
     return this.prismaService.project.delete({
       where: {
         id,
-        createdById: this.userId,
+        createdById: userId,
       },
     })
   }

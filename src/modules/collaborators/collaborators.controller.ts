@@ -9,10 +9,11 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common'
-import { ApiCreatedResponse, ApiNoContentResponse, ApiResponse } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiCreatedResponse, ApiNoContentResponse, ApiResponse } from '@nestjs/swagger'
 import { ValidateResourcesIds } from 'src/common/decorators/validate-resources-ids.decorator'
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 import { ValidateResourcesIdsInterceptor } from 'src/common/interceptors/validate-resources-ids.interceptor'
@@ -22,6 +23,8 @@ import {
   UpdateProjectCollaboratorDTO,
 } from './collaborators.dto'
 import { CollaboratorsService } from './collaborators.service'
+import { ApiPaginatedResponse } from 'src/common/swagger/api-paginated-response'
+import { queryPaginationDTO } from 'src/common/dtos/query-pagination.dto'
 
 @Controller({
   version: '1',
@@ -29,16 +32,18 @@ import { CollaboratorsService } from './collaborators.service'
 })
 @UseInterceptors(ValidateResourcesIdsInterceptor)
 @UseGuards(JwtAuthGuard)
+@ApiBearerAuth('jwt')
 export class CollaboratorsController {
   constructor(private readonly service: CollaboratorsService) {}
 
   @Get(':projectId')
   @ValidateResourcesIds()
-  @ApiResponse({
-    type: [ProjectCollaboratorListItemDTO],
-  })
-  findAllByProject(@Param('projectId', ParseUUIDPipe) projectId: string) {
-    return this.service.findAllByProject(projectId)
+  @ApiPaginatedResponse(ProjectCollaboratorListItemDTO)
+  findAllByProject(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Query() query?: queryPaginationDTO
+  ) {
+    return this.service.findAllByProject(projectId, query)
   }
 
   @Post(':projectId')

@@ -9,22 +9,27 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common'
-import { ApiResponse } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger'
 import { ValidateResourcesIds } from 'src/common/decorators/validate-resources-ids.decorator'
+import { queryPaginationDTO } from 'src/common/dtos/query-pagination.dto'
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 import { ValidateResourcesIdsInterceptor } from 'src/common/interceptors/validate-resources-ids.interceptor'
+import { ApiPaginatedResponse } from 'src/common/swagger/api-paginated-response'
 import { PrismaService } from 'src/prisma.service'
 import { TaskDTO } from './tasks.dto'
 import { TasksService } from './tasks.service'
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 
 @Controller({
   version: '1',
   path: 'projects/:projectId/tasks',
 })
 @UseInterceptors(ValidateResourcesIdsInterceptor)
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth('jwt')
 export class TasksController {
   constructor(
     private readonly tasksService: TasksService,
@@ -33,12 +38,13 @@ export class TasksController {
 
   @Get()
   @ValidateResourcesIds()
-  @ApiResponse({
-    type: [TaskDTO],
-  })
+  @ApiPaginatedResponse(TaskDTO)
   @UseGuards(JwtAuthGuard)
-  async findAllByProject(@Param('projectId', ParseUUIDPipe) projectId: string) {
-    return await this.tasksService.findAllByProject(projectId)
+  async findAllByProject(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Query() query?: queryPaginationDTO,
+  ) {
+    return await this.tasksService.findAllByProject(projectId, query)
   }
 
   @Get(':taskId')

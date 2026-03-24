@@ -1,42 +1,51 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma.service';
-import { AddProjectCollaboratorDTO, UpdateProjectCollaboratorDTO } from './collaborators.dto';
+import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common'
+import { queryPaginationDTO } from 'src/common/dtos/query-pagination.dto'
+import { PrismaService } from 'src/prisma.service'
+import { paginate, paginateOutput } from 'src/utils/pagination.utils'
+import { AddProjectCollaboratorDTO, UpdateProjectCollaboratorDTO } from './collaborators.dto'
 
 const userFields = {
-  user:{
-    select:{
+  user: {
+    select: {
       id: true,
       name: true,
       email: true,
-      avatar: true
-    }
-  }
+      avatar: true,
+    },
+  },
 }
 @Injectable()
 export class CollaboratorsService {
+  constructor(private readonly prisma: PrismaService) {}
 
-  constructor(private readonly prisma: PrismaService){}
-
-  findAllByProject(projectId: string){
-    return this.prisma.projectColaborator.findMany({
+  async findAllByProject(projectId: string, query?: queryPaginationDTO) {
+    const projectCollaborators = await this.prisma.projectColaborator.findMany({
+      ...paginate(query),
       where: {
-        projectId
+        projectId,
       },
       include: {
-        ...userFields
-      }
+        ...userFields,
+      },
     })
+
+    const total = await this.prisma.projectColaborator.count({
+      where: {
+        projectId,
+      },
+    })
+
+    return paginateOutput(projectCollaborators, query, total)
   }
 
-  async create(projectId: string, data: AddProjectCollaboratorDTO){
-
+  async create(projectId: string, data: AddProjectCollaboratorDTO) {
     const user = await this.prisma.user.findUnique({
       where: {
-        id: data.userId
-      }
+        id: data.userId,
+      },
     })
 
-    if(!user){
+    if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND)
     }
 
@@ -44,12 +53,12 @@ export class CollaboratorsService {
       where: {
         userId_projectId: {
           userId: user.id,
-          projectId
-        }
-      }
+          projectId,
+        },
+      },
     })
 
-    if(userCollaborator){
+    if (userCollaborator) {
       throw new HttpException('User already exists in project', HttpStatus.CONFLICT)
     }
 
@@ -58,25 +67,25 @@ export class CollaboratorsService {
         ...data,
         userId: data.userId,
         role: data.role,
-        projectId
+        projectId,
       },
-      include:{
-        ...userFields
-      }
+      include: {
+        ...userFields,
+      },
     })
   }
 
-  async update(projectId: string, userId: string, data: UpdateProjectCollaboratorDTO){
+  async update(projectId: string, userId: string, data: UpdateProjectCollaboratorDTO) {
     const userCollaborator = await this.prisma.projectColaborator.findUnique({
       where: {
         userId_projectId: {
           userId,
-          projectId
-        }
-      }
+          projectId,
+        },
+      },
     })
 
-    if(!userCollaborator){
+    if (!userCollaborator) {
       throw new HttpException('User not found in project', HttpStatus.NOT_FOUND)
     }
 
@@ -84,43 +93,43 @@ export class CollaboratorsService {
       where: {
         userId_projectId: {
           userId,
-          projectId
-        }
+          projectId,
+        },
       },
       data: {
-        role: data.role
+        role: data.role,
       },
-      include:{
-        ...userFields
-      }
+      include: {
+        ...userFields,
+      },
     })
   }
 
-  async delete(projectId: string, userId: string){
+  async delete(projectId: string, userId: string) {
     const collaborator = await this.prisma.projectColaborator.findUnique({
       where: {
-        userId_projectId:{
+        userId_projectId: {
           userId,
-          projectId
-        }
-      }
+          projectId,
+        },
+      },
     })
 
-    if(!collaborator){
+    if (!collaborator) {
       throw new HttpException('Collaborator not found in this project', HttpStatus.NOT_FOUND)
     }
 
-    if(collaborator.role === 'OWNER'){
+    if (collaborator.role === 'OWNER') {
       throw new BadRequestException('The project owner cannot be removed from project')
     }
 
     return this.prisma.projectColaborator.delete({
       where: {
-        userId_projectId:{
+        userId_projectId: {
           userId,
-          projectId
-        }
-      }
+          projectId,
+        },
+      },
     })
   }
 }

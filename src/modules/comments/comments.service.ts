@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { queryPaginationDTO } from 'src/common/dtos/query-pagination.dto'
 import { RequestContextService } from 'src/common/modules/RequestContext/request-context.service'
 import { PrismaService } from 'src/prisma.service'
+import { paginate, paginateOutput } from 'src/utils/pagination.utils'
 import { CommentRequestDTO } from './comments.dto'
 
 const authorFields = {
@@ -12,16 +14,14 @@ const authorFields = {
 }
 @Injectable()
 export class CommentsService {
-  private userId: string
   constructor(
     private readonly prisma: PrismaService,
     private readonly RequestContext: RequestContextService,
-  ) {
-    this.userId = RequestContext.getUserId()
-  }
+  ) {}
 
-  findAllByTask(taskId: string) {
-    return this.prisma.comment.findMany({
+  async findAllByTask(taskId: string, query?: queryPaginationDTO) {
+    const comments = await this.prisma.comment.findMany({
+      ...paginate(query),
       where: {
         taskId: taskId,
       },
@@ -33,6 +33,14 @@ export class CommentsService {
         },
       },
     })
+
+    const total = await this.prisma.comment.count({
+      where: {
+        taskId: taskId,
+      },
+    })
+
+    return paginateOutput(comments, query, total)
   }
 
   findByid(id: string, taskId: string) {
@@ -59,11 +67,12 @@ export class CommentsService {
   }
 
   create(taskId: string, data: CommentRequestDTO) {
+    const userId = this.RequestContext.getUserId()
     return this.prisma.comment.create({
       data: {
         ...data,
         taskId,
-        authorId: this.userId,
+        authorId: userId,
       },
       include: {
         author: {
@@ -76,11 +85,13 @@ export class CommentsService {
   }
 
   async update(taskId: string, id: string, data: CommentRequestDTO) {
+    const userId = this.RequestContext.getUserId()
+
     const existingComment = await this.prisma.comment.findFirst({
       where: {
         id,
         taskId,
-        authorId: this.userId,
+        authorId: userId,
       },
     })
 
@@ -89,7 +100,7 @@ export class CommentsService {
     return this.prisma.comment.update({
       where: {
         id,
-        authorId: this.userId,
+        authorId: userId,
       },
       data,
       include: {
@@ -103,11 +114,13 @@ export class CommentsService {
   }
 
   async delete(taskId: string, id: string) {
+    const userId = this.RequestContext.getUserId()
+
     const existingComment = await this.prisma.comment.findFirst({
       where: {
         id,
         taskId,
-        authorId: this.userId,
+        authorId: userId,
       },
     })
 
