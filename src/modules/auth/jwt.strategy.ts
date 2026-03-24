@@ -17,7 +17,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if(payload.purpose === 'password_reset'){
       throw new UnauthorizedException('Invalid token')
     }
-    
     const user = await this.prismaService.user.findFirst({
       where: {
         id: payload.sub,

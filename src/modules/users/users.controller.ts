@@ -10,10 +10,15 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common'
-import { ApiResponse } from '@nestjs/swagger'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiResponse } from '@nestjs/swagger'
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
+import { RequestContextService } from 'src/common/modules/RequestContext/request-context.service'
+import { CloudinaryService } from 'src/common/services/cloudinary/cloudinary.service'
 import { CreateUserDTO, UpdateUserDTO, UserFullDTO, UserListItemDTO } from './users.dto'
 import { UsersService } from './users.service'
 
@@ -22,8 +27,13 @@ import { UsersService } from './users.service'
   path: 'users',
 })
 @UseGuards(JwtAuthGuard)
+@ApiBearerAuth('jwt')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly cloudinaryService: CloudinaryService,
+    private readonly requestContextService: RequestContextService,
+  ) {}
 
   @Get()
   @ApiResponse({ type: [UserListItemDTO] })
@@ -49,12 +59,15 @@ export class UsersController {
   }
 
   @Post()
+  @ApiResponse({ type: UserListItemDTO })
   @HttpCode(HttpStatus.CREATED)
   create(@Body() data: CreateUserDTO) {
     return this.usersService.create(data)
   }
 
   @Put(':userId')
+  @ApiResponse({ type: UserListItemDTO })
+  @HttpCode(HttpStatus.OK)
   update(@Param('userId', ParseUUIDPipe) userId: string, @Body() data: UpdateUserDTO) {
     const user = this.usersService.findById(userId)
     if (!user) {
@@ -62,6 +75,39 @@ export class UsersController {
     }
 
     return this.usersService.update(userId, data)
+  }
+
+  @Post('/avatar')
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Avatar uploaded successfully',
+    type: UserListItemDTO,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid data',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAvatar(@UploadedFile() file: Express.Multer.File) {
+    const userId = this.requestContextService.getUserId()
+
+    const response = await this.cloudinaryService.upload(file, userId)
+    const updatedUser = await this.usersService.update(userId, { avatar: response.url })
+
+    return updatedUser
   }
 
   @Delete(':userId')
